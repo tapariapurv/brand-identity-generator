@@ -1,0 +1,5 @@
+{
+  "name": "Brand Identity Generator",
+  "description": "An AI-powered tool to generate a complete brand identity. Users describe their company mission, and the app generates a 'Brand Bible' dashboard containing a primary logo, secondary marks, a 5-color hex palette, and suggested Google Font pairings.",
+  "requestFramePermissions": []
+}
