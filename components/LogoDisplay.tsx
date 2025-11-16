@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface LogoDisplayProps {
@@ -7,26 +6,26 @@ interface LogoDisplayProps {
 }
 
 const LogoDisplay: React.FC<LogoDisplayProps> = ({ primaryLogoUrl, secondaryMarksUrls }) => {
+  const allLogos = [primaryLogoUrl, ...secondaryMarksUrls];
+
   return (
-    <div className="bg-slate-800/50 rounded-xl p-6 shadow-lg backdrop-blur-sm">
-      <h3 className="text-2xl font-bold text-white mb-4">Logos & Marks</h3>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-        <div className="flex flex-col items-center">
-          <p className="text-sm text-cyan-400 uppercase tracking-wider mb-2">Primary Logo</p>
-          <div className="bg-slate-700/50 p-4 rounded-lg">
-            <img src={primaryLogoUrl} alt="Primary Logo" className="w-48 h-48 object-contain" />
-          </div>
+    <div className="mt-8 flex flex-col gap-6 rounded-xl p-6 sm:p-8 bg-white/60 dark:bg-[#1b2727] backdrop-blur-xl border border-white/20 dark:border-[#3b5454]">
+      <h2 className="text-slate-900 dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">Logos & Marks</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+        <div className="flex flex-col items-center gap-2 col-span-2 sm:col-span-1">
+           <p className="text-sm text-slate-500 dark:text-[#9cbaba]">Primary Logo</p>
+           <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-slate-100 dark:bg-[#111818]/50 p-4 ring-1 ring-black/10 dark:ring-white/10">
+              <img src={primaryLogoUrl} alt="Primary Logo" className="w-full h-full object-contain" />
+           </div>
         </div>
-        <div className="flex flex-col items-center">
-          <p className="text-sm text-cyan-400 uppercase tracking-wider mb-2">Secondary Marks</p>
-          <div className="flex space-x-4">
-            {secondaryMarksUrls.map((url, index) => (
-              <div key={index} className="bg-slate-700/50 p-3 rounded-lg">
-                <img src={url} alt={`Secondary Mark ${index + 1}`} className="w-20 h-20 object-contain" />
+        {secondaryMarksUrls.map((url, index) => (
+           <div key={index} className="flex flex-col items-center gap-2">
+              <p className="text-sm text-slate-500 dark:text-[#9cbaba]">Secondary Mark</p>
+              <div className="flex aspect-square w-full items-center justify-center rounded-lg bg-slate-100 dark:bg-[#111818]/50 p-4 ring-1 ring-black/10 dark:ring-white/10">
+                <img src={url} alt={`Secondary Mark ${index + 1}`} className="w-full h-full object-contain" />
               </div>
-            ))}
-          </div>
-        </div>
+           </div>
+        ))}
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
-
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Chat } from "@google/genai";
 import { BrandIdentity, Color, FontPairing } from '../types';
 
 if (!process.env.API_KEY) {
@@ -59,26 +58,11 @@ const brandInfoSchema = {
   required: ["colorPalette", "fontPairings", "logoPrompt", "secondaryMarksPrompt"],
 };
 
-
-async function generateBrandInfo(mission: string): Promise<{ colorPalette: Color[]; fontPairings: FontPairing; logoPrompt: string; secondaryMarksPrompt: string; }> {
-    const prompt = `Based on the following company mission, generate a complete brand identity kit. The mission is: "${mission}"`;
-
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json",
-            responseSchema: brandInfoSchema,
-        },
-    });
-
-    const text = response.text.trim();
-    try {
-        return JSON.parse(text);
-    } catch (e) {
-        console.error("Failed to parse brand info JSON:", text);
-        throw new Error("Could not generate brand information. The AI's response was not valid JSON.");
-    }
+interface BrandInfo {
+  colorPalette: Color[];
+  fontPairings: FontPairing;
+  logoPrompt: string;
+  secondaryMarksPrompt: string;
 }
 
 async function generateImages(prompt: string, numberOfImages: number): Promise<string[]> {
@@ -95,9 +79,7 @@ async function generateImages(prompt: string, numberOfImages: number): Promise<s
     return response.generatedImages.map(img => `data:image/png;base64,${img.image.imageBytes}`);
 }
 
-export async function generateBrandBible(mission: string): Promise<BrandIdentity> {
-    const brandInfo = await generateBrandInfo(mission);
-    
+async function createBrandIdentityFromInfo(brandInfo: BrandInfo): Promise<BrandIdentity> {
     const [primaryLogoResult, secondaryMarksResult] = await Promise.all([
         generateImages(brandInfo.logoPrompt, 1),
         generateImages(brandInfo.secondaryMarksPrompt, 2)
@@ -113,4 +95,47 @@ export async function generateBrandBible(mission: string): Promise<BrandIdentity
         primaryLogoUrl: primaryLogoResult[0],
         secondaryMarksUrls: secondaryMarksResult,
     };
+}
+
+
+function parseJsonResponse(text: string): BrandInfo {
+     try {
+        return JSON.parse(text);
+    } catch (e) {
+        console.error("Failed to parse brand info JSON:", text);
+        throw new Error("Could not generate brand information. The AI's response was not valid JSON.");
+    }
+}
+
+export async function startBrandGeneration(mission: string): Promise<{ brandIdentity: BrandIdentity; chat: Chat }> {
+    const chat = ai.chats.create({
+        model: "gemini-2.5-flash",
+        // FIX: Moved systemInstruction into the config object as per Gemini API guidelines.
+        config: {
+            responseMimeType: "application/json",
+            responseSchema: brandInfoSchema,
+            systemInstruction: "You are a world-class brand identity designer. Your task is to generate a complete brand identity based on a user's mission. You will always respond with a single, valid JSON object that conforms to the provided schema."
+        },
+    });
+
+    const prompt = `Based on the following company mission, generate a complete brand identity kit. The mission is: "${mission}"`;
+    // FIX: Updated chat.sendMessage to pass an object with a 'message' property.
+    const response = await chat.sendMessage({ message: prompt });
+    
+    const brandInfo = parseJsonResponse(response.text.trim());
+    const brandIdentity = await createBrandIdentityFromInfo(brandInfo);
+
+    return { brandIdentity, chat };
+}
+
+export async function refineBrandGeneration(chat: Chat, currentIdentity: BrandIdentity, refinement: string): Promise<BrandIdentity> {
+    const prompt = `Here is the current brand identity JSON: ${JSON.stringify(currentIdentity)}. My refinement request is: "${refinement}". Please generate a new, complete brand identity in the same JSON format that incorporates this change. Only output the new JSON object.`;
+    
+    // FIX: Updated chat.sendMessage to pass an object with a 'message' property.
+    const response = await chat.sendMessage({ message: prompt });
+    
+    const newBrandInfo = parseJsonResponse(response.text.trim());
+    const newBrandIdentity = await createBrandIdentityFromInfo(newBrandInfo);
+
+    return newBrandIdentity;
 }
